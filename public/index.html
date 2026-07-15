@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>g4f-lite · API Debug Console</title>
+<meta name="description" content="Test and debug the g4f-lite serverless chat API. Send requests, inspect verbose debug output, and copy ready-to-use curl commands." />
+<meta name="theme-color" content="#0b0f14" />
+<style>
+  :root {
+    --bg: #0b0f14;
+    --surface: #121821;
+    --surface-2: #1a222e;
+    --border: #253040;
+    --text: #e6edf3;
+    --muted: #8b98a9;
+    --accent: #22c55e;
+    --accent-dim: #16351f;
+    --danger: #f87171;
+    --danger-dim: #3a1d1d;
+    --radius: 12px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  body { line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 64px; }
+
+  header.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; color: #04140a; font-weight: 800; font-family: var(--mono); }
+  h1 { font-size: 1.25rem; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 0.85rem; margin: 2px 0 18px; }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-family: var(--mono); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); background: var(--surface); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .dot.bad { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-dim); }
+
+  .grid { display: flex; flex-direction: column; gap: 16px; }
+  @media (min-width: 800px) { .grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; } .grid .full { grid-column: 1 / -1; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .card h2 { font-size: 0.95rem; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .tag { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+
+  label { display: block; font-size: 0.78rem; color: var(--muted); margin: 10px 0 4px; }
+  input, select, textarea {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 9px 10px; font-family: var(--sans); font-size: 0.9rem; outline: none;
+  }
+  textarea { font-family: var(--mono); font-size: 0.85rem; resize: vertical; min-height: 90px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+
+  button {
+    appearance: none; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    border-radius: 8px; padding: 9px 14px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    font-family: var(--sans);
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #04140a; border-color: var(--accent); }
+  button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+  pre { background: #0a0e13; border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow: auto; font-family: var(--mono); font-size: 0.78rem; margin: 0; max-height: 420px; }
+  .answer { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; white-space: pre-wrap; font-size: 0.9rem; min-height: 40px; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+  .chip { font-family: var(--mono); font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--muted); background: var(--surface-2); }
+  .chip.ok { color: var(--accent); border-color: var(--accent-dim); }
+  .chip.bad { color: var(--danger); border-color: var(--danger-dim); }
+
+  .attempts { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  .attempts li { font-family: var(--mono); font-size: 0.78rem; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; justify-content: space-between; gap: 10px; }
+  .attempts li.ok { border-color: var(--accent-dim); }
+  .attempts li.bad { border-color: var(--danger-dim); color: var(--danger); }
+
+  .copybar { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .copybar small { color: var(--muted); }
+  .muted { color: var(--muted); font-size: 0.8rem; }
+  code.inline { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">g4</div>
+    <div>
+      <h1>g4f-lite · API Debug Console</h1>
+    </div>
+    <span style="margin-left:auto" class="status-pill"><span id="healthDot" class="dot"></span><span id="healthText">checking…</span></span>
+  </header>
+  <p class="sub">Serverless OpenAI-compatible chat API with verbose debugging. Works from Kiwi / mobile and Python. Base URL: <code class="inline" id="baseUrl"></code></p>
+
+  <div class="grid">
+    <!-- Chat tester -->
+    <section class="card">
+      <h2>Chat tester <span class="tag">POST /api/chat</span></h2>
+      <label for="provider">Provider</label>
+      <select id="provider"></select>
+
+      <label for="model">Model</label>
+      <select id="model"></select>
+
+      <div class="row">
+        <div>
+          <label for="temperature">Temperature</label>
+          <input id="temperature" type="number" step="0.1" min="0" max="2" value="0.7" />
+        </div>
+        <div>
+          <label for="seed">Seed</label>
+          <input id="seed" type="number" value="42" />
+        </div>
+      </div>
+
+      <label for="prompt">Message</label>
+      <textarea id="prompt">Explain what gpt4free is in one short paragraph.</textarea>
+
+      <div class="btn-row">
+        <button id="sendBtn" class="primary">Send request</button>
+        <button id="curlBtn" type="button">Copy as curl</button>
+      </div>
+      <div class="copybar"><small id="copyHint"></small></div>
+    </section>
+
+    <!-- Response -->
+    <section class="card">
+      <h2>Response</h2>
+      <div id="answer" class="answer muted">Send a request to see the assistant reply here.</div>
+      <div id="respMeta" class="meta"></div>
+      <ul id="attempts" class="attempts"></ul>
+    </section>
+
+    <!-- Debug -->
+    <section class="card full">
+      <h2>Verbose debug <span class="tag">_debug</span></h2>
+      <p class="muted" style="margin-top:0">Full request/response trace: upstream URL, status, latency, raw payload, and per-model fallback attempts.</p>
+      <pre id="debug">// debug output appears here after a request</pre>
+    </section>
+
+    <!-- curl / endpoints -->
+    <section class="card full">
+      <h2>Endpoints &amp; curl</h2>
+      <p class="muted" style="margin-top:0">In Kiwi: open DevTools → Network → right-click a request → Copy as curl. Or use these directly:</p>
+      <pre id="endpoints"></pre>
+    </section>
+  </div>
+</div>
+
+<script>
+  const BASE = window.location.origin;
+  document.getElementById('baseUrl').textContent = BASE;
+
+  const $ = (id) => document.getElementById(id);
+  const providerSel = $('provider');
+  const modelSel = $('model');
+  let PROVIDERS = [];
+
+  function esc(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  // ---- health ----
+  async function checkHealth(){
+    try {
+      const r = await fetch(BASE + '/api/health');
+      const j = await r.json();
+      const ok = j.status === 'ok' && j.upstream === 'reachable';
+      $('healthDot').className = 'dot ' + (ok ? 'ok' : 'bad');
+      $('healthText').textContent = ok
+        ? 'online · upstream ' + (j.latency_ms ?? '?') + 'ms'
+        : (j.upstream || 'degraded');
+    } catch (e) {
+      $('healthDot').className = 'dot bad';
+      $('healthText').textContent = 'offline';
+    }
+  }
+
+  // ---- providers/models ----
+  async function loadProviders(){
+    const r = await fetch(BASE + '/api/providers');
+    const j = await r.json();
+    PROVIDERS = j.data || [];
+    providerSel.innerHTML = '';
+    PROVIDERS.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.label + (p.needs_auth ? ' (auth)' : '');
+      providerSel.appendChild(o);
+    });
+    syncModels();
+  }
+  function syncModels(){
+    const p = PROVIDERS.find(x => x.id === providerSel.value) || PROVIDERS[0];
+    modelSel.innerHTML = '';
+    (p ? p.models : []).forEach(m => {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = m; modelSel.appendChild(o);
+    });
+  }
+  providerSel.addEventListener('change', syncModels);
+
+  // ---- build request body ----
+  function buildBody(){
+    return {
+      provider: providerSel.value,
+      model: modelSel.value,
+      temperature: parseFloat($('temperature').value),
+      seed: parseInt($('seed').value, 10),
+      messages: [{ role: 'user', content: $('prompt').value }],
+    };
+  }
+
+  // ---- send ----
+  async function send(){
+    const btn = $('sendBtn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    $('answer').className = 'answer muted';
+    $('answer').textContent = 'Waiting for response…';
+    $('respMeta').innerHTML = '';
+    $('attempts').innerHTML = '';
+    const t0 = performance.now();
+    try {
+      const res = await fetch(BASE + '/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildBody()),
+      });
+      const took = Math.round(performance.now() - t0);
+      const j = await res.json();
+      $('debug').textContent = JSON.stringify(j._debug ?? j, null, 2);
+
+      if (res.ok && j.choices) {
+        $('answer').className = 'answer';
+        $('answer').textContent = j.choices[0].message.content;
+        const d = j._debug || {};
+        addChip('HTTP ' + res.status, 'ok');
+        addChip('model: ' + (j.model || '?'), 'ok');
+        addChip('client ' + took + 'ms', '');
+        if (d.upstream && d.upstream.latency_ms != null) addChip('upstream ' + d.upstream.latency_ms + 'ms', '');
+        renderAttempts(d.attempts);
+      } else {
+        $('answer').className = 'answer';
+        $('answer').innerHTML = '<span style="color:var(--danger)">' + esc(j.message || j.error || 'Request failed') + '</span>';
+        addChip('HTTP ' + res.status, 'bad');
+        renderAttempts(j.attempts);
+      }
+    } catch (e) {
+      $('answer').className = 'answer';
+      $('answer').innerHTML = '<span style="color:var(--danger)">Network error: ' + esc(e.message) + '</span>';
+      $('debug').textContent = String(e);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send request';
+    }
+  }
+  function addChip(text, cls){
+    const s = document.createElement('span');
+    s.className = 'chip ' + (cls || '');
+    s.textContent = text;
+    $('respMeta').appendChild(s);
+  }
+  function renderAttempts(attempts){
+    if (!Array.isArray(attempts)) return;
+    attempts.forEach(a => {
+      const li = document.createElement('li');
+      li.className = a.ok ? 'ok' : 'bad';
+      const right = a.ok ? ((a.latency_ms ?? '?') + 'ms') : (a.error || 'failed');
+      li.innerHTML = '<span>' + esc(a.model) + '</span><span>' + esc(right) + '</span>';
+      $('attempts').appendChild(li);
+    });
+  }
+
+  // ---- curl ----
+  function curlString(){
+    const body = JSON.stringify(buildBody());
+    return "curl -X POST '" + BASE + "/api/chat' \\\n  -H 'Content-Type: application/json' \\\n  -d '" + body.replace(/'/g, "'\\''") + "'";
+  }
+  async function copyCurl(){
+    try {
+      await navigator.clipboard.writeText(curlString());
+      $('copyHint').textContent = 'curl copied to clipboard';
+    } catch {
+      $('copyHint').textContent = 'copy failed — select from Endpoints below';
+    }
+    setTimeout(() => { $('copyHint').textContent = ''; }, 2500);
+  }
+
+  function renderEndpoints(){
+    $('endpoints').textContent =
+      "# health\ncurl " + BASE + "/api/health\n\n" +
+      "# list models\ncurl " + BASE + "/api/models\n\n" +
+      "# chat (simple)\n" + curlString() + "\n\n" +
+      "# OpenAI-compatible alias\ncurl -X POST '" + BASE + "/v1/chat/completions' \\\n  -H 'Content-Type: application/json' \\\n" +
+      "  -d '{\"model\":\"openai\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'";
+  }
+
+  $('sendBtn').addEventListener('click', send);
+  $('curlBtn').addEventListener('click', copyCurl);
+  ['provider','model','prompt','temperature','seed'].forEach(id =>
+    $(id).addEventListener('input', renderEndpoints));
+
+  (async function init(){
+    renderEndpoints();
+    checkHealth();
+    try { await loadProviders(); } catch (e) { /* ignore */ }
+    renderEndpoints();
+  })();
+</script>
+</body>
+</html>

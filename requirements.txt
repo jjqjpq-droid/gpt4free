@@ -1,26 +1,4 @@
-requests
-pycryptodome
-curl_cffi>=0.6.2
-aiohttp
-certifi
-browser_cookie3
-nest-asyncio2
-werkzeug
-pillow
-platformdirs
-fastapi
-uvicorn
-flask[async]
-brotli
-beautifulsoup4
-setuptools
-python-multipart
-a2wsgi
-python-dotenv
-ddgs
-cloudscraper
-numpy
-PyYAML
-prompt_optimizer
-websocket-client
-pystray
+# Vercel serverless deployment uses only the Python standard library.
+# The full g4f dependency set (curl_cffi, fastapi, uvicorn, pystray, ...) is
+# too heavy for Vercel serverless functions and is preserved in
+# requirements-full.txt for local / Docker use:  pip install -r requirements-full.txt

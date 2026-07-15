@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'no build step - static dashboard + python functions'",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/chat", "destination": "/api/index" },
+    { "source": "/api/models", "destination": "/api/index" },
+    { "source": "/api/providers", "destination": "/api/index" },
+    { "source": "/api/health", "destination": "/api/index" },
+    { "source": "/v1/chat/completions", "destination": "/api/index" },
+    { "source": "/v1/models", "destination": "/api/index" }
+  ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60
+    }
+  }
+}
